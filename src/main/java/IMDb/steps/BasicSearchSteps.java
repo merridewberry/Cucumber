@@ -1,126 +1,91 @@
 package IMDb.steps;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.TestInstance;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.PageFactory;
 
-import IMDb.Values;
-import IMDb.steps.hooks.Hooks;
 import io.cucumber.java.en.*;
 
 import static IMDb.Values.*;
+import static com.codeborne.selenide.Selenide.*;
+import static com.codeborne.selenide.WebDriverRunner.url;
+import static com.codeborne.selenide.Condition.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BasicSearchSteps {
-    @FindBy(name = "q")
-    WebElement searchField;
 
-    @FindBy(xpath = ".//div[@class='ipc-error-message ipc-error-message--on-baseAlt']/" +
-            "div[contains(., 'No results found.')]")
-    WebElement noResultsAlert;
-
-    @FindBy(partialLinkText = "See all results for ")
-    WebElement allResults;
-
-    @FindBy(id = "suggestion-search-button")
-    WebElement searchButton;
-
-    @FindBy(xpath = ".//p[text()='Search IMDb by typing a word or phrase in the search box at the top of this page.']")
-    WebElement emptySearchResult;
-
-    @FindBy(xpath = ".//h1[text()='No results found for ']")
-    WebElement noResultPageMessage;
-
+    String searchField_name = "q";
+    String noResultsAlert_xpath = ".//div[@class='ipc-error-message ipc-error-message--on-baseAlt']/" +
+            "div[contains(., 'No results found.')]";
+    String allResults_plink = "See all results for ";
+    String searchButton_id = "suggestion-search-button";
+    String emptySearchResult_xpath = ".//p[text()='Search IMDb by typing a word or phrase in the search box " +
+            "at the top of this page.']";
+    String noResultPageMessage_xpath = ".//h1[text()='No results found for ']";
     String tail;
-    WebDriver driver = Hooks.driver;
 
-    public BasicSearchSteps() {PageFactory.initElements(driver, this);}
 
-    @Given("^I enter title (.+) into the search field$")
-    public void inputTitle(String query) {
-        searchField.sendKeys(query);
-
-    }
-
-    @Given("^I click on the searched movie link with URL containing (.+) in the dropdown results$")
-    public void clickSearchedMovieFromTable(String url) {
-        tail = url;
-        getSearchedMovie(tail).click();
-    }
-
-    @Given("^I click on the searched movie link with URL containing (.+) in the results$")
-    public void clickSearchedMovieFromTableII(String url) {
-        tail = url;
-        getSearchedMovieII(tail).click();
-    }
+    public BasicSearchSteps() {}
 
     @Given("I enter movie title {string} into the search field")
     public void saveVariableAndInput(String query) {
-        tail = Values.MOVIE.get(query);
-        searchField.sendKeys(query);
+        tail = MOVIE.get(query);
+        $(By.name(searchField_name)).val(query);
+    }
+
+    @Given("^I enter title (.+) into the search field$")
+    public void inputTitle(String query) {
+        $(By.name(searchField_name)).val(query);
+    }
+
+    @Given("^I click on the searched movie link with URL containing (.+) in the dropdown results$")
+    public void clickSearchedMovieFromTable_dropdown(String url) {
+        tail = url;
+        $(By.xpath(".//a[@href='" + tail + MOVIE_URL_TAIL_DROPDOWN + "']")).click();
     }
 
     @Given("I click on the searched movie link in the dropdown results")
-    public void clickSearchedMovie() {
-        getSearchedMovie(tail).click();
-    }
-
-    private WebElement getSearchedMovie(String url) {
-        List<WebElement> searchedMovieList = driver.findElements(By.xpath(".//a[@href='" + url + MOVIE_URL_TAIL + "']"));
-        Assumptions.assumeTrue(searchedMovieList.size() > 0);
-        return searchedMovieList.get(0);
+    public void clickSearchedMovie_dropdown() {
+        $(By.xpath(".//a[@href='" + tail + MOVIE_URL_TAIL_DROPDOWN + "']")).click();
     }
 
     @Given("I click on the searched movie link")
-    public void clickSearchedMovieII() {
-        getSearchedMovieII(tail).click();
-    }
-
-    private WebElement getSearchedMovieII(String url) {
-        List<WebElement> searchedMovieList = driver.findElements(By.xpath(".//a[@href='" + url + MOVIE_URL_TAIL_II + "']"));
-        Assumptions.assumeTrue(searchedMovieList.size() > 0);
-        return searchedMovieList.get(0);
+    public void clickSearchedMovie_page() {
+        $(By.xpath(".//a[@href='" + tail + MOVIE_URL_TAIL_PAGE + "']")).click();
     }
 
     @Then("movie page URL is correct")
     public void checkUrl() {
-        Assertions.assertEquals(driver.getCurrentUrl(),URL + tail + "/" + MOVIE_URL_TAIL);
+        Assertions.assertEquals(url(),URL + tail + "/" + MOVIE_URL_TAIL_DROPDOWN);
     }
 
     @Then("movie URL is correct")
     public void checkUrlII() {
-        Assertions.assertEquals(driver.getCurrentUrl(),URL + tail + MOVIE_URL_TAIL_II);
+        Assertions.assertEquals(url(),URL + tail + MOVIE_URL_TAIL_PAGE);
     }
 
     @Then("\"No results found\" alert is displayed")
     public void checkNoResults() {
-        Assertions.assertTrue(noResultsAlert.isDisplayed());
+        $(By.xpath(noResultsAlert_xpath)).shouldBe(visible);
     }
 
     @Given("I press the search button")
     public void clickSearchButton() {
-        searchButton.click();
+        $(By.id(searchButton_id)).click();
     }
 
     @Then("page with no search results is displayed")
     public void checkNoResultPage() {
-        Assertions.assertTrue(noResultPageMessage.isDisplayed());
+        $(By.xpath(noResultPageMessage_xpath)).shouldBe(visible);
     }
 
     @Given("I click \"All results\" link")
     public void clickAllResults() {
-        allResults.click();
+        $(By.partialLinkText(allResults_plink)).click();
     }
 
     @Then("the corresponding message is displayed")
     public void checkEmptySearch() {
-        Assertions.assertTrue(emptySearchResult.isDisplayed());
+        $(By.xpath(emptySearchResult_xpath)).shouldBe(visible);
     }
 }
